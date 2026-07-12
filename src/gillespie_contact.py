@@ -2,7 +2,7 @@ import numpy as np
 
 def gillespie_contact(k_off: dict, k_on: dict, R_max, L_max, t_type, T_contact=500):
     B_trajectory = []
-    L = L_max[t_type]       # free pMHC ligands (TODO: Use poisson instead of one value)
+    L = np.random.poisson(L_max[t_type])     # free pMHC ligands
     R_I = R_max             # TCR inactive
     R_A = 0                 # TCR active
     B = 0                   # TCR-pMHC complex

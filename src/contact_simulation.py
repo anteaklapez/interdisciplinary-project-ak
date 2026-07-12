@@ -8,28 +8,30 @@ from scipy import stats as scipy_stats
 
 
 CLASS = ['ag', 'nag', 'bg']
+T = 5000
 
 # From Huang et al. 2010, Table 1, 37°C (2D kinetics)
 k_off = {'ag': 10.8, 'nag': 1.3, 'bg': 50.0}  # s^(-1)
 k_on  = {'ag': 1.2e-2, 'nag': 2.7e-5, 'bg': 1e-6}  # μm^4s^(-1)
 
-L_max = {'ag': 5, 'nag': 30, 'bg': 500} # treated as lambda for poisson sampling
+L_max = {'ag': 5, 'nag': 2, 'bg': 500} # treated as lambda for poisson sampling
 R_max_vals = [50]
 
-def compute_variance_rate(trajectory, T_contact=500):
+
+def compute_variance_rate(trajectory, T_contact=T):
     if len(trajectory) == 0:
         return 0.0
     _, B_values = zip(*trajectory)
     return np.var(np.array(B_values, dtype=float)) / T_contact
 
-
+event_counts = [len(gillespie_contact(k_off, k_on, 50, L_max, 'nag')) for _ in range(T)]
+print(np.unique(event_counts, return_counts=True))
 results = []
 n_sims = 500
 for R_max in R_max_vals:
     for t_type in CLASS:
         for _ in range(n_sims):
-            L = np.random.poisson(L_max[t_type])
-            B_trajecory = gillespie_contact(k_off, k_on, R_max, L_max, t_type)
+            B_trajecory = gillespie_contact(k_off, k_on, R_max, L_max, t_type, T)
             results.append((t_type, R_max, compute_variance_rate(B_trajecory)))
 
 df_results = pd.DataFrame(results, columns=['ligand_type', 'r_max', 'var_rate'])
@@ -50,7 +52,7 @@ fig_stats, ax_stats = plt.subplots(figsize=(8, 5))
 sns.boxplot(data=df_results, x='ligand_type', y='var_rate', ax=ax_stats, showfliers=False, boxprops=dict(alpha=0.3))
 sns.stripplot(data=df_results, x='ligand_type', y='var_rate', ax=ax_stats, size=2, alpha=0.4, jitter=True)
 
-ax_stats.set_title('Variance Rate: Boxplot + Individual Simulations (log scale)')
+ax_stats.set_title('Variance Rate: Boxplot + Individual Simulations')
 
 plt.tight_layout()
 
