@@ -8,7 +8,7 @@ from scipy import stats as scipy_stats
 
 
 CLASS = ['ag', 'nag', 'bg']
-T = 5000
+T = 1000
 
 # From Huang et al. 2010, Table 1, 37°C (2D kinetics)
 k_off = {'ag': 10.8, 'nag': 1.3, 'bg': 50.0}  # s^(-1)
@@ -56,7 +56,7 @@ ax_stats.set_title('Variance Rate: Boxplot + Individual Simulations')
 
 plt.tight_layout()
 
-data_path_stats = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_2/var_rate_boxplot.png')
+data_path_stats = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_boxplot.png')
 plt.savefig(data_path_stats, dpi=150)
 
 plt.show()
@@ -72,7 +72,7 @@ for ax, t_type in zip(axes, CLASS):
 
 plt.tight_layout()
 
-data_path1 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_2/var_rate_distributions.png')
+data_path1 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_distributions.png')
 plt.savefig(data_path1, dpi=150)
 plt.show()
 
@@ -87,7 +87,7 @@ ax2.legend()
 
 plt.tight_layout()
 
-data_path2 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_2/var_rate_histogram.png')
+data_path2 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_histogram.png')
 plt.savefig(data_path2, dpi=150)
 plt.show()
 
@@ -102,7 +102,7 @@ ax3.set_xlabel('Variance Rate')
 ax3.legend()
 
 plt.tight_layout()
-data_path3 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_2/var_rate_ag_nag_overlap.png')
+data_path3 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_ag_nag_overlap.png')
 plt.savefig(data_path3, dpi=150)
 plt.show()
 
