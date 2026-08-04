@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from gillespie_contact import gillespie_contact
+from gillespie_contact import gillespie_contact, compute_variance_rate
 import os
 from scipy import stats as scipy_stats
 
@@ -17,12 +17,6 @@ k_on  = {'ag': 1.2e-2, 'nag': 2.7e-5, 'bg': 1e-6}  # μm^4s^(-1)
 L_max = {'ag': 5, 'nag': 2, 'bg': 500} # treated as lambda for poisson sampling
 R_max_vals = [50]
 
-
-def compute_variance_rate(trajectory, T_contact=T):
-    if len(trajectory) == 0:
-        return 0.0
-    _, B_values = zip(*trajectory)
-    return np.var(np.array(B_values, dtype=float)) / T_contact
 
 event_counts = [len(gillespie_contact(k_off, k_on, 50, L_max, 'nag')) for _ in range(T)]
 print(np.unique(event_counts, return_counts=True))
@@ -56,7 +50,7 @@ ax_stats.set_title('Variance Rate: Boxplot + Individual Simulations')
 
 plt.tight_layout()
 
-data_path_stats = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_boxplot.png')
+data_path_stats = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_4/var_rate_boxplot.png')
 plt.savefig(data_path_stats, dpi=150)
 
 plt.show()
@@ -72,22 +66,24 @@ for ax, t_type in zip(axes, CLASS):
 
 plt.tight_layout()
 
-data_path1 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_distributions.png')
+data_path1 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_4/var_rate_distributions.png')
 plt.savefig(data_path1, dpi=150)
 plt.show()
 
 # HISTOGRAM
 fig2, ax2 = plt.subplots(figsize=(8, 5))
 for t_type, group in df_results.groupby('ligand_type'):
-    sns.histplot(group['var_rate'], alpha=0.5, label=t_type, bins=12, stat='density', ax=ax2)
+    sns.histplot(group['var_rate'], alpha=0.5, label=t_type, bins=40, stat='density', ax=ax2)
 
+ax2.set_yscale('log')
+ax2.set_xscale('log')
 ax2.set_title('Variance Rate Histogram by Ligand Class')
 ax2.set_xlabel('Variance Rate')
 ax2.legend()
 
 plt.tight_layout()
 
-data_path2 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_histogram.png')
+data_path2 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_4/var_rate_histogram.png')
 plt.savefig(data_path2, dpi=150)
 plt.show()
 
@@ -95,14 +91,14 @@ plt.show()
 subset_ag_nag = df_results[df_results['ligand_type'].isin(['ag', 'nag'])]
 fig3, ax3 = plt.subplots(figsize=(8,5))
 for t_type, group in subset_ag_nag.groupby('ligand_type'):
-    sns.kdeplot(group['var_rate'], ax=ax3, label=t_type, fill=True)
+    sns.ecdfplot(group['var_rate'], ax=ax3, label=t_type)
 
-ax3.set_title('Variance Rate Overlap: Agonist vs Near-agonist')
+ax3.set_title('Variance Rate ECDF: Agonist vs Near-agonist')
 ax3.set_xlabel('Variance Rate')
 ax3.legend()
 
 plt.tight_layout()
-data_path3 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_3/var_rate_ag_nag_overlap.png')
+data_path3 = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_4/var_rate_ag_nag_overlap.png')
 plt.savefig(data_path3, dpi=150)
 plt.show()
 

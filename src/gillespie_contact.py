@@ -31,3 +31,20 @@ def gillespie_contact(k_off: dict, k_on: dict, R_max, L_max, t_type, T_contact=5
             # TODO: R_A must become R_I again at some point
 
     return B_trajectory
+
+
+def compute_variance_rate(trajectory):
+    if len(trajectory) == 0:
+        return 0.0
+    times, B_values = zip(*trajectory)
+    times = np.array(times)
+    B_values = np.array(B_values, dtype=float)
+
+    t_prev = np.concatenate(([0.0], times[:-1]))
+    dt = times - t_prev
+    T_actual = times[-1]
+
+    B_mean = np.sum(B_values*dt) / T_actual
+    B_var =np.sum(((B_values - B_mean) ** 2) * dt) / T_actual
+    
+    return B_var / T_actual
