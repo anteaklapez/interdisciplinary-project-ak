@@ -103,8 +103,6 @@ plt.savefig(data_path3, dpi=150)
 plt.show()
 
 # KS - measures how well distributions ag and nag are completely separable
-from scipy import stats as scipy_stats
-
 ag_rates  = df_results[df_results['ligand_type'] == 'ag']['var_rate']
 nag_rates = df_results[df_results['ligand_type'] == 'nag']['var_rate']
 
