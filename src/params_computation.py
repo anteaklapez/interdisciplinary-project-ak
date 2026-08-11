@@ -6,44 +6,45 @@ from gillespie_contact import gillespie_contact, compute_variance_rate
 import os
 from scipy import stats as scipy_stats
 import json
-
-
-CLASS = ['ag', 'nag', 'bg']
-T = 1000
-
-# From Huang et al. 2010, Table 1, 37°C (2D kinetics)
-k_off = {'ag': 10.8, 'nag': 1.3, 'bg': 50.0}  # s^(-1)
-k_on  = {'ag': 1.2e-2, 'nag': 2.7e-5, 'bg': 1e-6}  # μm^4s^(-1)
-
-L_max = {'ag': 5, 'nag': 2, 'bg': 500} # treated as lambda for poisson sampling
-R_max = 50
+from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, R_MAX, L_MAX
+from utils.paths import data_path
 
 N_POOLED = 20000 
-POOL_SEED = 999  
+POOL_SEED = 999
+FAMILY_BY_CLASS = {'ag': 'loglogistic',
+                   'nag': 'gamma',
+                   'bg': 'gamma'}
 
-np.random.seed(POOL_SEED)
-
-final_params = {}
-
-for t_type in CLASS:
-    vals = np.array([compute_variance_rate(gillespie_contact(k_off, k_on, R_max, L_max, t_type, T)) for _ in range(N_POOLED)])
-    
+def fit_class_params(t_type: str, n_pooled: int = N_POOLED) -> dict:
+    vals = np.array([compute_variance_rate(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT)) 
+                     for _ in range(n_pooled)])
     vals_pos = vals[vals > 0]
     n_zero = len(vals) - len(vals_pos)
     pi0 = n_zero/len(vals)
 
-    if t_type == 'ag':
-        shape_ll, loc_ll, scale_ll = scipy_stats.fisk.fit(vals_pos, floc=0)
-        ks, p = scipy_stats.kstest(vals_pos, 'fisk', args=(shape_ll, loc_ll, scale_ll))
-        final_params[t_type] = {'family': 'loglogistic', 'shape': shape_ll, 'loc': loc_ll, 'scale': scale_ll,
-                                'ks': ks, 'p': p, 'n': len(vals), 'n_zero_dropped': n_zero, 'pi0': pi0}
-            
-    else:
-        shape_g, loc_g, scale_g = scipy_stats.gamma.fit(vals_pos, floc=0)
-        ks, p = scipy_stats.kstest(vals_pos, 'gamma', args=(shape_g, loc_g, scale_g))
-        final_params[t_type] = {'family': 'gamma', 'shape': shape_g, 'loc': loc_g, 'scale': scale_g,
-                                'ks': ks, 'p': p, 'n': len(vals), 'n_zero_dropped': n_zero, 'pi0': pi0}
+    family = FAMILY_BY_CLASS[t_type]
+    dist = scipy_stats.fisk if family == 'loglogistic' else scipy_stats.gamma
+    dist_name = 'fisk' if family == 'loglogistic' else 'gamma'
 
-out_path = os.path.join(os.path.dirname(__file__), '../data/runs/likelihood_v_4/final_likelihood_params.json')
-with open(out_path, 'w') as f:
-    json.dump(final_params, f, indent=2, default=float)
+    shape, loc, scale = dist.fit(vals_pos, floc=0)
+    ks, p = scipy_stats.kstest(vals_pos, dist_name, args=(shape, loc, scale))
+
+    return {'family': family, 'shape': shape, 'loc': loc, 'scale': scale,
+            'ks': ks, 'p': p, 'n': len(vals), 'n_zero_dropped': n_zero, 'pi0': pi0}
+
+
+def compute_all_params(classes = CLASS) -> dict:
+    np.random.seed(POOL_SEED)
+    return {t_type: fit_class_params(t_type) for t_type in classes}
+
+if __name__ == '__main__':
+    final_params = compute_all_params()
+
+    out_path = data_path('final_likelihood_params.json')
+    with open(out_path, 'w') as f:
+        json.dump(final_params, f, indent=2, default=float)
+
+    print(f"Saved likelihood params to {out_path}")
+    for cls, p in final_params.items():
+        print(f"  {cls}: family={p['family']} shape={p['shape']:.4f} "
+              f"scale={p['scale']:.6g} ks={p['ks']:.4f} p={p['p']:.4f} pi0={p['pi0']:.4f}")
