@@ -8,7 +8,7 @@ changing it multiple times within the code.
 
 import os
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Current experiment/run version
 RUN_VERSION = 'likelihood_v_4'
