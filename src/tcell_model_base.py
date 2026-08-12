@@ -3,14 +3,11 @@ from scipy import stats
 from gillespie_contact import gillespie_contact, compute_variance_rate
 from seq_generator import generate_contaminated_sequence, add_measurement_noise, generate_apc_sequence
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, R_MAX, L_MAX
+from utils.load_likelihood_params import load_likelihood_params
 
 N_SIMS = 1000
 
-params = {
-    'ag': {'family': 'loglogistic', 'shape': 1.53, 'scale': 0.000801},
-    'bg': {'family': 'gamma', 'shape': 10.54, 'scale': 3.32*1e-8},
-    'nag': {'family': 'gamma', 'shape': 0.897, 'scale': 1.92*1e-6, 'pi0': 0.226}
-}
+params = load_likelihood_params()
 
 def likelihood(v, cls, floor=1e-8):
     p = params[cls]
