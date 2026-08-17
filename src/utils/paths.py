@@ -11,7 +11,7 @@ import os
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Where current run WRITES outputs
-RUN_VERSION = 'baseline_noisy'
+RUN_VERSION = 'bayes'
 DATA_DIR = os.path.join(ROOT_DIR, 'data', 'runs', RUN_VERSION)
 
 # Where current run READS outputs

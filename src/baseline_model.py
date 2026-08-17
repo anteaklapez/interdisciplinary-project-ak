@@ -68,7 +68,9 @@ def _youden_j(labels: np.ndarray, flagged: np.ndarray) -> float:
 
     return tpr - fpr
 
-def calibrate_two_phase_tau(calib_sequences: np.ndarray, calib_labels: np.ndarray, window: int = CALIB_WINDOW):
+def calibrate_two_phase_tau(calib_sequences: np.ndarray, calib_labels: np.ndarray, 
+                            window: int = CALIB_WINDOW, rolling_window: int = ROLLING_WINDOW):
+    # Phase 1: screen
     vals = calib_sequences[:, :window].mean(axis=1)
 
     best_tpr, tau1 = -1, None
@@ -80,12 +82,21 @@ def calibrate_two_phase_tau(calib_sequences: np.ndarray, calib_labels: np.ndarra
         if fpr <= 0.3 and tpr > best_tpr:
             best_tpr, tau1 = tpr, tau
 
-    passed_phase1 = vals > tau1
-    best_j, tau2 = -1, None
-    for tau in TAU_CANDIDATES:
-        if tau <= tau1:
-            continue
+    # Phase 2: confirm
+    # Used stricter confirmation on LOCAL VOLATILITY for contacts that passed phase 1
+    calib_vol = local_rolling_volatility(calib_sequences, rolling_window)
+    calib_vol_window = calib_vol[:, :window].mean(axis=1)
 
+    passed_phase1 = vals > tau1
+
+    vol_candidates = np.logspace(
+        np.log10(max(calib_vol_window[calib_vol_window > 0].min(), 1e-12)),
+        np.log10(calib_vol_window.max() + 1e-12),
+        25,
+    )
+
+    best_j, tau2 = -1, None
+    for tau in vol_candidates:
         flagged = passed_phase1 & (vals > tau)
         j = _youden_j(calib_labels, flagged)
         if j > best_j:
