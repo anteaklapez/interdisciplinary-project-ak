@@ -4,6 +4,7 @@ from gillespie_contact import gillespie_contact, compute_variance_rate
 from scipy import stats as scipy_stats
 from utils.paths import data_path
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, L_MAX, R_MAX
+from seq_generator import add_measurement_noise
 
 N_SIMS = 500
 
@@ -35,11 +36,13 @@ def report_ks_ag_vs_nag(df_results: pd.DataFrame) -> tuple:
 
 
 if __name__ == '__main__':
+    np.random.seed(42)
     df_results = run_simulations(N_SIMS)
+    df_results['var_rate'] = [add_measurement_noise(v) for v in df_results['var_rate']]
     df_results.to_csv(data_path('var_rate_samples.csv'), index=False)
 
     stats_df = summarize(df_results)
-    stats_df.to_csv(data_path('var_rate_summary_stats.csv'), index=False)
+    stats_df.to_csv(data_path('var_rate_summary_stat.csv'), index=False)
 
     print(stats_df)
 

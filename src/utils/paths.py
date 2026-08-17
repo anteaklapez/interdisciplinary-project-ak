@@ -11,11 +11,11 @@ import os
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Where current run WRITES outputs
-RUN_VERSION = 'baseline'
-DATA_DIR = os.path.join(ROOT_DIR, 'data', 'model_runs', RUN_VERSION)
+RUN_VERSION = 'baseline_noisy'
+DATA_DIR = os.path.join(ROOT_DIR, 'data', 'runs', RUN_VERSION)
 
 # Where current run READS outputs
-SOURCE_RUN_VERSION = 'likelihood_v_4'
+SOURCE_RUN_VERSION = 'bayes'
 SOURCE_DIR = os.path.join(ROOT_DIR, 'data', 'runs', SOURCE_RUN_VERSION)
 
 def data_path(filename: str) -> str:
