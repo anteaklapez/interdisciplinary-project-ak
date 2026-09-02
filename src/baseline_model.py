@@ -97,7 +97,7 @@ def calibrate_two_phase_tau(calib_sequences: np.ndarray, calib_labels: np.ndarra
 
     best_j, tau2 = -1, None
     for tau in vol_candidates:
-        flagged = passed_phase1 & (vals > tau)
+        flagged = passed_phase1 & (calib_vol_window > tau)
         j = _youden_j(calib_labels, flagged)
         if j > best_j:
             best_j, tau2 = j, tau
@@ -105,9 +105,11 @@ def calibrate_two_phase_tau(calib_sequences: np.ndarray, calib_labels: np.ndarra
     return tau1, tau2
 
 
-def running_flag_fraction(sequences: np.ndarray, tau1: float, tau2: float) -> pd.DataFrame:
+def running_flag_fraction(sequences: np.ndarray, tau1: float, tau2: float, rolling_window: int = ROLLING_WINDOW) -> pd.DataFrame:
     passed_phase1 = sequences > tau1
-    passed_both = passed_phase1 & (sequences > tau2)
+    volatility = local_rolling_volatility(sequences, window=rolling_window)
+    passed_phase2 = volatility > tau2
+    passed_both = passed_phase1 & passed_phase2
 
     flags = passed_both.astype(float)
     cum_flags = np.cumsum(flags, axis=1)
@@ -132,6 +134,15 @@ if __name__ == '__main__':
     tau1, tau2 = calibrate_two_phase_tau(calib_sequences, calib_labels)
     print(f"Calibrated tau1 (screen, Phase 1) = {tau1:.6g}")
     print(f"Calibrated tau2 (confirm, Phase 2) = {tau2:.6g}")
+
+    #sanity-check flagged fractions per class
+    vals = calib_sequences[:, :CALIB_WINDOW].mean(axis=1)
+    vol = local_rolling_volatility(calib_sequences, ROLLING_WINDOW)
+    vol_window = vol[:, :CALIB_WINDOW].mean(axis=1)
+    passed_both = (vals > tau1) & (vol_window > tau2)
+
+    print(f"Flagged fraction (agonist-positive): {passed_both[calib_labels].mean():.3f}")
+    print(f"Flagged fraction (agonist-negative): {passed_both[~calib_labels].mean():.3f}")
 
     eval_sequences, eval_labels = collect_sequences(n_seq_per_class=N_SEQ_PER_CLASS, seed=42)
     result_df = auc_per_step(eval_sequences, eval_labels, tau1, tau2)

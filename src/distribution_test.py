@@ -5,7 +5,7 @@ from gillespie_contact import gillespie_contact, compute_variance_rate
 from scipy import stats as scipy_stats
 
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, L_MAX, R_MAX
-from utils.paths import data_path
+from utils.paths import data_path, source_path
 
 N_SIMS = 1000
 N_SEEDS = 30
@@ -82,9 +82,9 @@ if __name__=='__main__':
     df_seeds.to_csv(data_path('seed_sweep_1000.csv'), index=False)
 
     summary = summarize_seed_sweep(df_seeds)
-    print(summary)
+    summary.to_csv(data_path('summary_seed_sweep.csv'), index=False)
 
-    df_results = pd.read_csv(data_path('var_rate_samples.csv'))
+    df_results = pd.read_csv(source_path('var_rate_samples.csv'))
     plot_ag_gamma_qq(df_results)
 
     plt.show()
