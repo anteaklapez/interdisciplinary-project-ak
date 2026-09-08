@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from utils.paths import data_path
 import os
 
-BASELINE_PATH = os.path.join(os.path.dirname(__file__), '..','data', 'runs', 'baseline_noisy', 'baseline_sequential_auc_per_step.csv')
-BAYES_PATH = os.path.join(os.path.dirname(__file__), '..','data', 'runs', 'bayes', 'bayes_auc_per_step.csv')
+BASELINE_PATH = os.path.join(os.path.dirname(__file__), '..', '..','data', 'runs', 'V0.1.0','baseline_noisy', 'baseline_sequential_auc_per_step.csv')
+BAYES_PATH = os.path.join(os.path.dirname(__file__), '..', '..','data', 'runs', 'V0.1.0', 'bayes', 'bayes_auc_per_step.csv')
 
 def plot_comparison(bayes_path=BAYES_PATH, baseline_path=BASELINE_PATH, out_path='bayes_vs_baseline_auc.png'):
     bayes_df = pd.read_csv(bayes_path)
