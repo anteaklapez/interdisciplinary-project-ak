@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import stats
-from gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, R_MAX, L_MAX
 
 def generate_contaminated_sequence(t_type, contamination_rate, n_contacts, other_classes):

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
 import os
 from scipy import stats as scipy_stats
 import json

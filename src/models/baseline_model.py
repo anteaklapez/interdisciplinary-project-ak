@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
-from seq_generator import generate_apc_sequence, add_measurement_noise
+from generators.seq_generator import generate_apc_sequence, add_measurement_noise
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, R_MAX, L_MAX
 from utils.paths import data_path, source_path
 

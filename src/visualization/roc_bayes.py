@@ -3,8 +3,8 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score, roc_curve
 
 from utils.paths import data_path
-from seq_generator import generate_apc_sequence, add_measurement_noise
-from tcell_model_base import danger_prior, bayes_update_log
+from generators.seq_generator import generate_apc_sequence, add_measurement_noise
+from models.tcell_model_base import danger_prior, bayes_update_log
 from utils.params import K_OFF, K_ON, R_MAX, L_MAX, T_CONTACT
 
 N_SEQ_PER_CLASS = 500     # number of ag-sequences and non-ag-sequences each

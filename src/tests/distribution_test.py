@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
 from scipy import stats as scipy_stats
 
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, L_MAX, R_MAX

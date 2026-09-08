@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import stats
-from gillespie_contact import gillespie_contact, compute_variance_rate
-from seq_generator import generate_contaminated_sequence, add_measurement_noise, generate_apc_sequence
+from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
+from generators.seq_generator import generate_contaminated_sequence, add_measurement_noise, generate_apc_sequence
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, R_MAX, L_MAX
 from utils.load_likelihood_params import load_likelihood_params
 
