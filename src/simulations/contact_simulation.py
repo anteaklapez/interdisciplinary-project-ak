@@ -39,10 +39,10 @@ if __name__ == '__main__':
     np.random.seed(42)
     df_results = run_simulations(N_SIMS)
     df_results['var_rate'] = [add_measurement_noise(v) for v in df_results['var_rate']]
-    df_results.to_csv(data_path('var_rate_samples.csv'), index=False)
+    df_results.to_csv(data_path('likelihood_v_4', 'var_rate_samples.csv'), index=False)
 
     stats_df = summarize(df_results)
-    stats_df.to_csv(data_path('var_rate_summary_stat.csv'), index=False)
+    stats_df.to_csv(data_path('likelihood_v_4', 'var_rate_summary_stat.csv'), index=False)
 
     print(stats_df)
 

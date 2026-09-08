@@ -15,7 +15,7 @@ def plot_boxplot(df_results: pd.DataFrame):
 
     ax.set_title('Variance Rate: Boxplot + Individual Simulations')
     fig.tight_layout()
-    fig.savefig(data_path('var_rate_boxplot.png'), dpi=150)
+    fig.savefig(data_path('likelihood_v_4','var_rate_boxplot.png'), dpi=150)
 
     return fig
 
@@ -30,7 +30,7 @@ def plot_histograms(df_results: pd.DataFrame):
         ax.set_xlabel('Variance Rate')
 
     fig.tight_layout()
-    fig.savefig(data_path('var_rate_distributions.png'), dpi=150)
+    fig.savefig(data_path('likelihood_v_4','var_rate_distributions.png'), dpi=150)
 
     return fig
 
@@ -47,7 +47,7 @@ def plot_log_histogram(df_results: pd.DataFrame):
     ax.legend()
 
     fig.tight_layout()
-    fig.savefig(data_path('var_rate_histogram.png'), dpi=150)
+    fig.savefig(data_path('likelihood_v_4','var_rate_histogram.png'), dpi=150)
 
     return fig
 
@@ -63,7 +63,7 @@ def plot_ag_nag_ecdf(df_results: pd.DataFrame):
     ax.legend()
 
     fig.tight_layout()
-    fig.savefig(data_path('var_rate_ag_nag_overlap.png'), dpi=150)
+    fig.savefig(data_path('likelihood_v_4','var_rate_ag_nag_overlap.png'), dpi=150)
 
 
 if __name__ == '__main__':

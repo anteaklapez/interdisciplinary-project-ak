@@ -63,12 +63,12 @@ if __name__ == '__main__':
     scores, labels = collect_trajectories()
 
     auc_df = auc_per_step(scores, labels)
-    out_path_auc = data_path('bayes_auc_per_step.csv')
+    out_path_auc = data_path('bayes', 'bayes_auc_per_step.csv')
     auc_df.to_csv(out_path_auc, index=False)
 
     for step in [1, 5, 20, 50, 100, 200]:
         roc_df = roc_at_step(scores, labels, step)
-        out_path_roc = data_path(f'bayes_roc_step_{step}.csv')
+        out_path_roc = data_path('bayes','bayes_roc_step_{step}.csv')
 
         roc_df.to_csv(out_path_roc, index=False)
 

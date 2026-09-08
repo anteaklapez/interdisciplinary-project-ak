@@ -1,7 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from utils.paths import data_path, source_path
-from sklearn.metrics import roc_auc_score
+from utils.paths import data_path
 import os
 
 BASELINE_PATH = os.path.join(os.path.dirname(__file__), '..','data', 'runs', 'baseline_noisy', 'baseline_sequential_auc_per_step.csv')
@@ -32,7 +31,7 @@ def plot_comparison(bayes_path=BAYES_PATH, baseline_path=BASELINE_PATH, out_path
     ax.spines['right'].set_visible(False)
 
     fig.tight_layout()
-    fig.savefig(data_path(out_path), dpi=150)
+    fig.savefig(data_path('bayes',out_path), dpi=150)
     return out_path
 
 

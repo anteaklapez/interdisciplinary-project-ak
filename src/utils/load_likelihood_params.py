@@ -8,8 +8,8 @@ Bayesian modelling. Reads json produced by params_computation.py.
 import json
 from utils.paths import source_path
 
-def load_likelihood_params(filename: str = 'final_likelihood_params.json') -> dict:
-    path = source_path(filename)
+def load_likelihood_params(dirname: str = 'likelihood_v_4', filename: str = 'final_likelihood_params.json') -> dict:
+    path = source_path(dirname, filename)
     with open(path, 'r') as f:
         params = json.load(f)
 

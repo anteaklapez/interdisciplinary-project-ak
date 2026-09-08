@@ -147,7 +147,7 @@ if __name__ == '__main__':
     eval_sequences, eval_labels = collect_sequences(n_seq_per_class=N_SEQ_PER_CLASS, seed=42)
     result_df = auc_per_step(eval_sequences, eval_labels, tau1, tau2)
 
-    result_df.to_csv(data_path('baseline_sequential_auc_per_step.csv'), index=False)
+    result_df.to_csv(data_path('baseline_noisy', 'baseline_sequential_auc_per_step.csv'), index=False)
 
     print(result_df.head(15))
     print(result_df.tail(10))

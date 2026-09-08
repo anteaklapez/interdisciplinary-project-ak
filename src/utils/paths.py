@@ -11,20 +11,20 @@ import os
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Where current run WRITES outputs
-RUN_VERSION = 'bayes'
+RUN_VERSION = 'V0.2.0'
 DATA_DIR = os.path.join(ROOT_DIR, 'data', 'runs', RUN_VERSION)
 
 # Where current run READS outputs
-SOURCE_RUN_VERSION = 'bayes'
+SOURCE_RUN_VERSION = 'V0.2.0'
 SOURCE_DIR = os.path.join(ROOT_DIR, 'data', 'runs', SOURCE_RUN_VERSION)
 
-def data_path(filename: str) -> str:
+def data_path(dirname: str, filename: str) -> str:
     """Build an absolute path inside the current run's data folder,
     creating the folder if it does not exist yet."""
     os.makedirs(DATA_DIR, exist_ok=True)
-    return os.path.join(DATA_DIR, filename)
+    return os.path.join(DATA_DIR, dirname, filename)
 
-def source_path(filename: str) -> str:
+def source_path(dirname: str, filename: str) -> str:
     if not os.path.isdir(SOURCE_DIR):
         raise FileNotFoundError(f"Source run directory not found: {SOURCE_DIR}")
-    return os.path.join(SOURCE_DIR, filename)
+    return os.path.join(SOURCE_DIR, dirname, filename)
