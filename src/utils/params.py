@@ -15,3 +15,5 @@ K_ON  = {'ag': 1.2e-2, 'nag': 2.7e-5, 'bg': 1e-6}  # μm^4s^(-1)
 
 L_MAX = {'ag': 5, 'nag': 2, 'bg': 500} # treated as lambda for poisson sampling
 R_MAX = [50]
+
+KINETICS_RATIOS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]

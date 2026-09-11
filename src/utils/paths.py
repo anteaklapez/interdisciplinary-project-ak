@@ -11,17 +11,18 @@ import os
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Where current run WRITES outputs
-RUN_VERSION = 'V0.1.0'
+RUN_VERSION = 'V0.2.0'
 DATA_DIR = os.path.join(ROOT_DIR, 'data', 'runs', RUN_VERSION)
 
 # Where current run READS outputs
-SOURCE_RUN_VERSION = 'V0.1.0'
+SOURCE_RUN_VERSION = 'V0.2.0'
 SOURCE_DIR = os.path.join(ROOT_DIR, 'data', 'runs', SOURCE_RUN_VERSION)
 
 def data_path(dirname: str, filename: str) -> str:
     """Build an absolute path inside the current run's data folder,
     creating the folder if it does not exist yet."""
-    os.makedirs(DATA_DIR, exist_ok=True)
+    full_dir = os.path.join(DATA_DIR, dirname)
+    os.makedirs(full_dir, exist_ok=True)
     return os.path.join(DATA_DIR, dirname, filename)
 
 def source_path(dirname: str, filename: str) -> str:
