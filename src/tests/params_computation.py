@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_timeweighted_variance
 import os
 from scipy import stats as scipy_stats
 import json
@@ -16,7 +16,7 @@ FAMILY_BY_CLASS = {'ag': 'loglogistic',
                    'bg': 'gamma'}
 
 def fit_class_params(t_type: str, n_pooled: int = N_POOLED) -> dict:
-    vals = np.array([compute_variance_rate(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT)) 
+    vals = np.array([compute_timeweighted_variance(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT)) 
                      for _ in range(n_pooled)])
     vals_pos = vals[vals > 0]
     n_zero = len(vals) - len(vals_pos)

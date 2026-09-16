@@ -9,6 +9,6 @@ def compute_koff(tau_ag: float = 1, ratio: float = 1):
     return k_off
 
 def compute_kon():
-    return {'ag': 0.01, 'nag': 0.009, 'bg': 1e-6}
+    return {'ag': 0.01, 'nag': 0.01, 'bg': 1e-6}
     
 

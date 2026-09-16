@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_timeweighted_variance, summarize_contact
 from scipy import stats as scipy_stats
 from utils.paths import data_path, source_path
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, L_MAX, R_MAX, KINETICS_RATIOS
@@ -14,12 +14,17 @@ def run_simulations(n_sims: int = N_SIMS, **kwargs) -> pd.DataFrame:
     for R_max in R_MAX:
         for t_type in CLASS:
             for _ in range(n_sims):
-                B_trajectory = gillespie_contact(kwargs['K_OFF'], kwargs['K_ON'], R_max, L_MAX, t_type, T_CONTACT)
-                results.append((t_type, R_max, compute_variance_rate(B_trajectory)))
-    return pd.DataFrame(results, columns=['ligand_type', 'r_max', 'var_rate'])
+                B_trajectory, state_trajectory, waiting_times = gillespie_contact(kwargs['K_OFF'], kwargs['K_ON'], R_max, L_MAX, t_type, T_CONTACT)
+                metrics = summarize_contact(B_trajectory, state_trajectory)
+                results.append({
+                        'ligand_type': t_type,
+                        'r_max': R_max,
+                        **metrics
+                    })
+    return pd.DataFrame(results)
 
 def summarize(df_results: pd.DataFrame):
-    return df_results.groupby('ligand_type')['var_rate'].agg(
+    return df_results.groupby('ligand_type')['time_weighted_variance'].agg(
                 mean='mean', std='std',
                 ci_low=lambda x: np.percentile(x, 2.5),
                 ci_high=lambda x: np.percentile(x, 97.5),
@@ -28,9 +33,9 @@ def summarize(df_results: pd.DataFrame):
                 min='min',
                 max='max').reset_index()
     
-def report_ks_ag_vs_nag(df_results: pd.DataFrame) -> tuple:
-    ag_rates = df_results[df_results['ligand_type']=='ag']['var_rate']
-    nag_rates = df_results[df_results['ligand_type']=='nag']['var_rate']
+def report_ks_ag_vs_nag(df_results: pd.DataFrame, column: str) -> tuple:
+    ag_rates = df_results[df_results['ligand_type']=='ag'][column]
+    nag_rates = df_results[df_results['ligand_type']=='nag'][column]
     ks_stat, p_value = scipy_stats.ks_2samp(ag_rates, nag_rates)
 
     return ks_stat, p_value
@@ -47,7 +52,7 @@ def aggregate_scenarios():
     scenario_frames = {'S1': [], 'S2': [], 'S3': []}
 
     for ratio in KINETICS_RATIOS:
-        df = pd.read_csv(source_path(f'kinetics/ratios/ratio {ratio}', 'var_rate_samples.csv'))
+        df = pd.read_csv(source_path(f'kinetics/ratios/ratio {ratio}', 'var_samples.csv'))
         df['ratio'] = ratio
         scenario_frames[assign_scenario(ratio)].append(df)
 
@@ -55,7 +60,7 @@ def aggregate_scenarios():
         pooled = pd.concat(frames, ignore_index=True)
         summary = summarize(pooled)
 
-        pooled.to_csv(data_path(f'kinetics/{scenario}', 'var_rate_samples.csv'), index=False)
+        pooled.to_csv(data_path(f'kinetics/{scenario}', 'var_samples.csv'), index=False)
         summary.to_csv(data_path(f'kinetics/{scenario}', 'summary_stats.csv'), index=False)
 
 
@@ -69,17 +74,25 @@ if __name__ == '__main__':
         k_off = compute_koff(1, ratio)
         df_results = run_simulations(N_SIMS, K_ON = k_on, K_OFF = k_off)
 
-        df_results['var_rate'] = [add_measurement_noise(v) for v in df_results['var_rate']]
-        df_results.to_csv(data_path(f'kinetics/ratios/ratio {ratio}', 'var_rate_samples.csv'), index=False)
+        df_results['ratio'] = ratio
+        df_results['time_weighted_variance_observed'] = [add_measurement_noise(value) for value in df_results['time_weighted_variance']]
+        df_results['total_signal_observed'] = [add_measurement_noise(v)for v in df_results['total_signal']]
+
+        df_results.to_csv(data_path(f'kinetics/ratios/ratio {ratio}', 'var_samples.csv'), index=False)
 
         stats_df = summarize(df_results)
-        stats_df.to_csv(data_path(f'kinetics/ratios/ratio {ratio}', 'var_rate_summary_stat.csv'), index=False)
+        stats_df.to_csv(data_path(f'kinetics/ratios/ratio {ratio}', 'var_summary_stat.csv'), index=False)
 
         print(stats_df)
         print()
 
-        ks_stat, p_value = report_ks_ag_vs_nag(df_results)
-        print(f"KS statistic (ag vs nag): {ks_stat:.3f}, p-value: {p_value:.4f}")
+        ks_var, p_var = report_ks_ag_vs_nag(df_results, 'time_weighted_variance')
+        print(f"VARIANCE: KS statistic (ag vs nag): {ks_var:.3f}, p-value: {p_var:.4f}")
+
+        print()
+
+        ks_signal, p_signal = report_ks_ag_vs_nag(df_results, 'total_signal_observed')
+        print(f"SIGNAL: KS statistic (ag vs nag): {ks_signal:.3f}, p-value: {p_signal:.4f}")
 
         print()
 

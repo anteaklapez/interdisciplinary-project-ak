@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import stats
-from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_timeweighted_variance
 from generators.seq_generator import generate_contaminated_sequence, add_measurement_noise, generate_apc_sequence
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, R_MAX, L_MAX
 from utils.load_likelihood_params import load_likelihood_params
@@ -48,7 +48,7 @@ def run_belief_trajectory(values, initial_belief: dict) -> tuple:
 
 def test_ideal(n_sims:int, danger_levels = (0.1, 0.05, 0.2)):
     for t_type in CLASS:
-        class_v = [compute_variance_rate(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT))
+        class_v = [compute_timeweighted_variance(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT))
                 for _ in range(n_sims)]
         for d in danger_levels:
             initial_belief = danger_prior(d)

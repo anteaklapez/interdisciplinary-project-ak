@@ -1,5 +1,5 @@
 import numpy as np
-from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_timeweighted_variance
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, R_MAX, L_MAX
 
 def generate_contaminated_sequence(t_type, contamination_rate, n_contacts, other_classes):
@@ -10,7 +10,7 @@ def generate_contaminated_sequence(t_type, contamination_rate, n_contacts, other
         else:
             actual = t_type
 
-        v = compute_variance_rate(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, actual, T_CONTACT))
+        v = compute_timeweighted_variance(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, actual, T_CONTACT))
         seq.append(v)
         labels.append(actual)
 
@@ -31,6 +31,6 @@ def generate_apc_sequence(n_contacts, n_agonist, k_off, k_on, R_max, L_max, T,
     
     np.random.shuffle(labels)
 
-    seq = [compute_variance_rate(gillespie_contact(k_off, k_on, R_max, L_max, lbl, T)) for lbl in labels]
+    seq = [compute_timeweighted_variance(gillespie_contact(k_off, k_on, R_max, L_max, lbl, T)) for lbl in labels]
 
     return seq, labels

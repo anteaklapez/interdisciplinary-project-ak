@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from simulations.gillespie_contact import gillespie_contact, compute_variance_rate
+from simulations.gillespie_contact import gillespie_contact, compute_timeweighted_variance
 from scipy import stats as scipy_stats
 
 from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, L_MAX, R_MAX
@@ -46,7 +46,7 @@ def run_seed_sweep(n_seeds: int = N_SEEDS, n_sims: int = N_SIMS) -> pd.DataFrame
     for seed in range(n_seeds):
         np.random.seed(seed)  # gillespie_contact uses np.random internally
         for t_type in CLASS:
-            vals = [compute_variance_rate(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT))
+            vals = [compute_timeweighted_variance(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT))
                     for _ in range(n_sims)]
             r = fit_and_test(vals, t_type)
             r.update(seed=seed, class_=t_type)

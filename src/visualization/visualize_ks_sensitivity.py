@@ -7,9 +7,12 @@ from simulations.contact_simulation import report_ks_ag_vs_nag
 def compute_ks_curve():
     records = []
     for ratio in KINETICS_RATIOS:
-        df = pd.read_csv(source_path(f'kinetics/ratios/ratio {ratio}', 'var_rate_samples.csv'))
-        ks_stat, p_value = report_ks_ag_vs_nag(df)
-        records.append({'ratio': ratio, 'ks_stat': ks_stat, 'p_val': p_value})
+        df = pd.read_csv(source_path(f'kinetics/ratios/ratio {ratio}', 'var_samples.csv'))
+        ks_stat_var, p_value_var = report_ks_ag_vs_nag(df, 'time_weighted_variance')
+        ks_stat_signal, p_value_signal = report_ks_ag_vs_nag(df, 'total_signal')
+        records.append({'ratio': ratio, 
+                        'ks_stat_var': ks_stat_var, 'p_val_var': p_value_var,
+                        'ks_stat_signal': ks_stat_signal, 'p_val_signal': p_value_signal})
 
     return pd.DataFrame(records).sort_values('ratio')
 
@@ -17,11 +20,12 @@ def compute_ks_curve():
 def plot_ks_sensitivity(curve_df):
     fig, ax = plt.subplots(figsize = (8, 5))
 
-    ax.plot(curve_df['ratio'], curve_df['ks_stat'], marker = 'o', color = '#1f77b4')
+    ax.plot(curve_df['ratio'], curve_df['ks_stat_var'], marker = 'o', color = '#1f77b4', label='Time weighted variance')
+    ax.plot(curve_df['ratio'], curve_df['ks_stat_signal'], marker = 'o', color = "#ef8011", label='Signal rate')
 
     ax.set_xlabel(r'Off-rate ratio $k_{off,nag}/k_{off,ag}$')
     ax.set_ylabel('KS statistic (ag vs nag)')
-    ax.set_title('Sensitivity of class separability to off-rate ratio')
+    ax.set_title('Agonist--near-agonist separability across off-rate ratios')
 
     ax.axvspan(0, 3, color='grey', alpha=0.08, label='S1: near-equal')
     ax.axvspan(3, 10, color='grey', alpha=0.15, label='S2: moderate')
