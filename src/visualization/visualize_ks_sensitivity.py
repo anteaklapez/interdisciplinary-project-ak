@@ -9,7 +9,7 @@ def compute_ks_curve():
     for ratio in KINETICS_RATIOS:
         df = pd.read_csv(source_path(f'kinetics/ratios/ratio {ratio}', 'var_samples.csv'))
         ks_stat_var, p_value_var = report_ks_ag_vs_nag(df, 'time_weighted_variance')
-        ks_stat_signal, p_value_signal = report_ks_ag_vs_nag(df, 'total_signal')
+        ks_stat_signal, p_value_signal = report_ks_ag_vs_nag(df, 'signal_rate')
         records.append({'ratio': ratio, 
                         'ks_stat_var': ks_stat_var, 'p_val_var': p_value_var,
                         'ks_stat_signal': ks_stat_signal, 'p_val_signal': p_value_signal})

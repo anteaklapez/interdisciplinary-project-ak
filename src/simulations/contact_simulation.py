@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
         print()
 
-        ks_signal, p_signal = report_ks_ag_vs_nag(df_results, 'total_signal_observed')
+        ks_signal, p_signal = report_ks_ag_vs_nag(df_results, 'signal_rate')
         print(f"SIGNAL: KS statistic (ag vs nag): {ks_signal:.3f}, p-value: {p_signal:.4f}")
 
         print()

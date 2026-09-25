@@ -1,90 +1,212 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from simulations.gillespie_contact import gillespie_contact, compute_timeweighted_variance
 from scipy import stats as scipy_stats
+from time import perf_counter
 
-from utils.params import CLASS, T_CONTACT, K_OFF, K_ON, L_MAX, R_MAX
+from utils.params import CLASS
 from utils.paths import data_path, source_path
 
-N_SIMS = 1000
-N_SEEDS = 30
+RATIOS = [1.5, 4, 10]
+N_SPLITS = 10
+TRAIN_FRACTION = 0.7
 
-DISTR_FAMILY = {'gamma': (scipy_stats.gamma, dict(floc=0)),
-                'lognorm': (scipy_stats.lognorm, dict(floc=0)), 
-                'weibull': (scipy_stats.weibull_min, dict(floc=0)), 
-                'pareto': (scipy_stats.pareto, dict(floc=0)), 
-                'loglogistic': (scipy_stats.fisk, dict(floc=0))}
+DISTRIBUTIONS = {
+    'gamma': (scipy_stats.gamma, {'floc': 0}),
+    'lognormal': (scipy_stats.lognorm, {'floc': 0}),
+    'weibull': (scipy_stats.weibull_min, {'floc': 0}),
+    'loglogistic': (scipy_stats.fisk, {'floc': 0})
+}
 
-def fit_and_test(samples, class_name) -> dict:
+def fit_one_split(samples, ratio, class_name, split_seed) -> dict:
     samples = np.array(samples, dtype=float)
-    samples_pos = samples[samples > 0]
-    n_dropped = len(samples) - len(samples_pos)
+    samples_pos = samples[samples>0]
 
-    result = {'class': class_name, 'n': len(samples), 'n_zero_dropped': n_dropped, 'n_unique': len(np.unique(samples_pos))}
+    if len(samples_pos) < 10:
+        raise ValueError(f'Too few positive values for {class_name}, r={ratio}')
 
-    if len(samples_pos) < 5:
-        for fam in DISTR_FAMILY:
-            result[f'{fam}_ks'], result[f'{fam}_p'] = np.nan, np.nan
-        return result
+    rng = np.random.default_rng(split_seed)
+    shuffled = rng.permutation(samples_pos)
 
-    for name, (dist, fit_kwargs) in DISTR_FAMILY.items():
-        try:
-            params = dist.fit(samples_pos, **fit_kwargs)
-            ks, p = scipy_stats.kstest(samples_pos, dist.name, args=params)
-            result[f'{name}_params'] = params
-            result[f'{name}_ks'], result[f'{name}_p'] = ks, p
-        except Exception as e: 
-            result[f'{name}_ks'], result[f'{name}_p'] = np.nan, np.nan
-
-    return result
-
-
-def run_seed_sweep(n_seeds: int = N_SEEDS, n_sims: int = N_SIMS) -> pd.DataFrame:
+    split_index = int(TRAIN_FRACTION*len(shuffled))
+    train = shuffled[:split_index]
+    test = shuffled[split_index:]
 
     records = []
-    for seed in range(n_seeds):
-        np.random.seed(seed)  # gillespie_contact uses np.random internally
-        for t_type in CLASS:
-            vals = [compute_timeweighted_variance(gillespie_contact(K_OFF, K_ON, R_MAX[0], L_MAX, t_type, T_CONTACT))
-                    for _ in range(n_sims)]
-            r = fit_and_test(vals, t_type)
-            r.update(seed=seed, class_=t_type)
-            records.append(r)
+
+    for family, (distribution, fit_kwargs) in DISTRIBUTIONS.items():
+        try:
+            start = perf_counter()
+            params = distribution.fit(train, **fit_kwargs)
+            print(
+                f'r={ratio}, class={class_name}, '
+                f'split={split_seed}, family={family}, '
+                f'time={perf_counter() - start:.2f}s'
+            )
+            fitted_distribution = distribution(*params)
+
+            ks_result = scipy_stats.ks_1samp(test, fitted_distribution.cdf)
+            ks_stat, p_value = ks_result.statistic, ks_result.pvalue
+            
+            log_density = fitted_distribution.logpdf(test)
+            finite_log_density = np.maximum(log_density, np.log(np.finfo(float).tiny))
+
+            records.append({
+                'ratio': ratio,
+                'ligand_type': class_name,
+                'split_seed': split_seed,
+                'family': family,
+                'n': len(samples),
+                'n_zero': np.sum(samples == 0),
+                'zero_fraction': np.mean(samples == 0),
+                'n_train': len(train),
+                'n_test': len(test),
+                'test_mean_loglik': finite_log_density.mean(),
+                'ks_statistic': ks_stat,
+                'ks_p_value': p_value,
+                'parameters': repr(tuple(params))
+            })
+
+        except Exception as error:
+            print(
+                f'Fit failed: r={ratio}, class={class_name}, '
+                f'family={family}: {error}'
+            )
+
+    return records
+
+def run_distribution_sweep() -> pd.DataFrame:
+    records = []
+
+    for ratio in RATIOS:
+        df = pd.read_csv(source_path(f'kinetics/ratios/ratio {format_ratio(ratio)}', 'var_samples.csv'))
+
+        for ligand_type in CLASS:
+            samples = df.loc[df['ligand_type'] == ligand_type, 'time_weighted_variance'].to_numpy()
+
+            for split_seed in range(N_SPLITS):
+                records.extend(fit_one_split(samples, ratio, ligand_type, split_seed))
 
     return pd.DataFrame(records)
 
-def summarize_seed_sweep(df_seeds: pd.DataFrame) -> pd.DataFrame:
-    p_cols = [f'{fam}_p' for fam in DISTR_FAMILY]
-    return df_seeds.groupby('class_')[p_cols + ['n_zero_dropped']].agg(['min', 'max', 'mean'])
+def summarize_fits(results: pd.DataFrame):
+    summary = (results
+                .groupby(['ratio', 'ligand_type', 'family'])
+                .agg(
+                    mean_test_loglik=('test_mean_loglik', 'mean'),
+                    sd_test_loglik=('test_mean_loglik', 'std'),
+                    mean_ks=('ks_statistic', 'mean'),
+                    max_ks=('ks_statistic', 'max'),
+                    mean_ks_p=('ks_p_value', 'mean'),
+                    zero_fraction=('zero_fraction', 'first'),
+                    n=('n', 'first')
+                ).reset_index()
+               )
+    groups = summary.groupby(['ratio', 'ligand_type'])
 
-def plot_ag_gamma_qq(df_results: pd.DataFrame):
-    ag_vals = df_results[df_results['ligand_type'] == 'ag']['var_rate'].values
-    ag_vals_pos = ag_vals[ag_vals > 0]
+    summary['loglik_rank'] = groups['mean_test_loglik'].rank(ascending=False)
+    summary['ks_rank'] = groups['mean_ks'].rank(ascending=True)
+    summary['combined_rank'] = (summary['loglik_rank'] + summary['ks_rank'])
 
-    shape_ag, loc_ag, scale_ag = scipy_stats.gamma.fit(ag_vals_pos, floc=0)
+    return summary.sort_values(['ratio', 'ligand_type', 'combined_rank'])
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    scipy_stats.probplot(ag_vals_pos, dist=scipy_stats.gamma,
-                        sparams=(shape_ag, loc_ag, scale_ag), plot=ax)
-    ax.set_title(f'QQ-Plot: ag vs Fitted Gamma (shape={shape_ag:.3f}, scale={scale_ag:.5f})')
-    ax.get_lines()[0].set_markersize(3)
-    ax.get_lines()[0].set_alpha(0.5)
+def select_best_fits(summary: pd.DataFrame):
+    return (summary
+            .sort_values(['ratio', 'ligand_type', 'combined_rank'])
+            .groupby(['ratio', 'ligand_type'], as_index=False)
+            .first()
+            )
 
-    plt.tight_layout()
-    plt.savefig(data_path('ag_gamma_qqplot.png'), dpi=150)
+def fit_final_models(selected: pd.DataFrame):
+    rows = []
+    for _, selection in selected.iterrows():
+        ratio = selection['ratio']
+        ligand_type = selection['ligand_type']
+        family = selection['family']
 
-    return fig
+        df = pd.read_csv(source_path(f'kinetics/ratios/ratio {format_ratio(ratio)}', 'var_samples.csv'))
 
+        samples = df.loc[df['ligand_type']==ligand_type, 'time_weighted_variance'].to_numpy(dtype=float)
+
+        samples_pos = samples[samples > 0]
+        distribution, fit_kwargs = DISTRIBUTIONS[family]
+        params = distribution.fit(samples_pos, **fit_kwargs)
+
+        rows.append({
+            'ratio': ratio,
+            'ligand_type': ligand_type,
+            'family': family,
+            'zero_probability': np.mean(samples == 0),
+            'parameters': repr(tuple(params))
+        })
+    return pd.DataFrame(rows)
+
+def plot_fitted_cdfs(final_models: pd.DataFrame):
+    for ratio in RATIOS:
+        df = pd.read_csv(
+            source_path(
+                f'kinetics/ratios/ratio {format_ratio(ratio)}',
+                'var_samples.csv'
+            )
+        )
+
+        fig, axes = plt.subplots(1, len(CLASS), figsize=(12, 3.5))
+
+        ratio_models = final_models[final_models['ratio'] == ratio]
+
+        for ax, ligand_type in zip(axes, CLASS):
+            samples = df.loc[df['ligand_type'] == ligand_type, 'time_weighted_variance'].to_numpy(dtype=float)
+            samples_pos = np.sort(samples[samples > 0])
+
+            empirical_cdf = np.arange(1, len(samples_pos) + 1) / len(samples_pos)
+
+            model = ratio_models[ratio_models['ligand_type'] == ligand_type].iloc[0]
+
+            family = model['family']
+            distribution, fit_kwargs = DISTRIBUTIONS[family]
+            params = distribution.fit(samples_pos, **fit_kwargs)
+
+            ax.step(samples_pos, empirical_cdf, where='post', label='Empirical')
+            ax.plot(samples_pos, distribution.cdf(samples_pos, *params), label=f'Fitted {family}')
+
+            ax.set_title(ligand_type)
+            ax.set_xlabel('Time-weighted variance')
+            ax.set_ylabel('Cumulative probability')
+            ax.legend(fontsize=8)
+
+
+        fig.suptitle(
+            f'Positive variance likelihood fits, r={ratio}'
+        )
+        fig.tight_layout()
+
+        fig.savefig(
+            data_path(
+                f'distribution_test/ratios/ratio {format_ratio(ratio)}',
+                'fitted_cdfs.png'
+            ),
+            dpi=200,
+            bbox_inches='tight'
+        )
+        plt.close(fig)
+
+def format_ratio(ratio):
+    return f'{ratio:g}'
 
 if __name__=='__main__':
-    df_seeds = run_seed_sweep()
-    df_seeds.to_csv(data_path('seed_sweep_1000.csv'), index=False)
+    results = run_distribution_sweep()
+    results.to_csv(data_path('distribution_test', 'variance_split_results.csv'), index=False)
 
-    summary = summarize_seed_sweep(df_seeds)
-    summary.to_csv(data_path('summary_seed_sweep.csv'), index=False)
+    summary = summarize_fits(results)
+    summary.to_csv(data_path('distribution_test', 'variance_fit_summary.csv'), index=False)
 
-    df_results = pd.read_csv(source_path('var_rate_samples.csv'))
-    plot_ag_gamma_qq(df_results)
+    selected = select_best_fits(summary)
+    selected.to_csv(data_path('distribution_test', 'selected_variance_families.csv'), index=False)
 
-    plt.show()
+    final_models = fit_final_models(selected)
+    final_models.to_csv(data_path('distribution_test', 'final_variance_models.csv'), index=False)
+    plot_fitted_cdfs(final_models)
+
+    print(selected.to_string(index=False))
+    print('\nFINAL MODELS')
+    print(final_models.to_string(index=False))

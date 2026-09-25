@@ -91,8 +91,7 @@ def gillespie_contact(k_off: dict, k_on: dict, R_max, L_max, t_type, T_contact=5
 
 def compute_timeweighted_stats(trajectory):
     if len(trajectory) == 0:
-        return 0.0
-    
+        return 0.0, 0.0, 0.0    
     times, B_values = zip(*trajectory)
     times = np.array(times)
     B_values = np.array(B_values, dtype=float)
@@ -102,8 +101,7 @@ def compute_timeweighted_stats(trajectory):
     T_actual = times[-1]
 
     if T_actual <= 0:
-        return 0.0
-
+        return 0.0, 0.0, 0.0
     total_bound_time = np.sum(B_values*dt)
     mean = total_bound_time / T_actual
     variance =np.sum(((B_values - mean) ** 2) * dt) / T_actual
