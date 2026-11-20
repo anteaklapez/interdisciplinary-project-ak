@@ -37,7 +37,7 @@ def gillespie_contact(k_off: dict, k_on: dict, R_max, L_max, t_type, T_contact=5
 
         dt = np.random.exponential(1 / a_total)
 
-        if t+dt > T_contact:
+        if t+dt >= T_contact:
             B_trajectory.append((T_contact, B))
             state_trajectory.append((T_contact, L, R_I, R_A, B, S, 'end'))
             break
@@ -69,9 +69,14 @@ def gillespie_contact(k_off: dict, k_on: dict, R_max, L_max, t_type, T_contact=5
             R_A -= 1
             R_I += 1
             event = 'revert'
-        else:
+        elif threshold < cumulative[4]:
             S += 1
             event = 'signal'
+        else:
+            raise RuntimeError(
+                f"No reaction selected: threshold={threshold!r}, "
+                f"cumulative_total={cumulative[-1]!r}"
+                )
 
         if min(L, R_I, R_A, B, S) < 0:
             raise RuntimeError(f'Negative state after {event} at t={t:.6f}')

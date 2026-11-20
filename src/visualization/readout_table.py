@@ -12,6 +12,8 @@ SCENARIOS = {
 }
 
 READOUTS = {
+    'time_weighted_mean_b':
+        r'Time-weighted mean of $B(t)$',
     'time_weighted_variance':
         r'Time-weighted variance of $B(t)$',
     'binding_unbinding_events':
